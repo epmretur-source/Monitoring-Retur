@@ -48,7 +48,7 @@
         <!-- Loading Overlay -->
         <div id="loading-indicator" class="hidden bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-xl flex items-center space-x-3 shadow-sm">
             <i class="fa-solid fa-spinner fa-spin text-lg"></i>
-            <span class="text-xs font-semibold">Menghubungkan ke Google Sheets... Mohon tunggu.</span>
+            <span class="text-xs font-semibold">Menyinkronkan data ke Google Sheets...</span>
         </div>
 
         <!-- Stat Cards -->
@@ -236,19 +236,34 @@
             alert("Sesi login telah di-reset. Anda perlu memasukkan PIN lagi.");
         }
 
+        // AMBIL DATA SECARA CEPAT (INSTANT CACHE + BACKGROUND SYNC)
         async function fetchDataFromSheet() {
-            showLoading(true);
+            const cachedData = localStorage.getItem("cached_rtr_data");
+            if (cachedData) {
+                try {
+                    rtrData = JSON.parse(cachedData);
+                    renderTable();
+                } catch (e) {
+                    console.error("Gagal membaca cache lokal", e);
+                }
+            } else {
+                showLoading(true);
+            }
+
             try {
                 const res = await fetch(GOOGLE_SCRIPT_URL);
-                rtrData = await res.json();
+                const freshData = await res.json();
+                rtrData = freshData;
+                localStorage.setItem("cached_rtr_data", JSON.stringify(freshData));
                 renderTable();
             } catch (err) {
-                alert("Gagal mengambil data dari Google Sheets.");
+                console.error("Gagal sinkron data:", err);
             } finally {
                 showLoading(false);
             }
         }
 
+        // KIRIM DATA DI LATAR BELAKANG (SUPER CEPAT)
         async function postToSheet(payload) {
             showLoading(true);
             try {
@@ -258,9 +273,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                setTimeout(fetchDataFromSheet, 1200);
             } catch (err) {
-                alert("Gagal memperbarui data ke Google Sheets.");
+                console.error("Gagal kirim data ke Sheet:", err);
+                alert("Peringatan: Gagal menyinkronkan data ke Google Sheets online.");
+            } finally {
                 showLoading(false);
             }
         }
@@ -271,6 +287,41 @@
             }
         }
 
+        // 1. TAMBAH DATA BARU (INSTANT UPDATE LAYAR)
+        function saveNewRTR(e) {
+            e.preventDefault();
+            
+            const newItem = {
+                id: Date.now().toString(),
+                noTtr: document.getElementById('input-no-ttr').value,
+                outlet: document.getElementById('input-outlet').value,
+                direktorat: document.getElementById('input-direktorat').value,
+                wh: document.getElementById('input-date').value,
+                entryDone: false, entry: "",
+                accDone: false, acc: "",
+                salesDone: false, sales: "",
+                dbDone: false, db: ""
+            };
+
+            rtrData.unshift(newItem); 
+            localStorage.setItem("cached_rtr_data", JSON.stringify(rtrData));
+            renderTable();
+            closeModal();
+
+            document.getElementById('input-no-ttr').value = '';
+            document.getElementById('input-outlet').value = '';
+            document.getElementById('input-direktorat').value = '';
+
+            postToSheet({
+                action: "ADD",
+                noTtr: newItem.noTtr,
+                outlet: newItem.outlet,
+                direktorat: newItem.direktorat,
+                wh: newItem.wh
+            });
+        }
+
+        // 2. CENTANG CHECKLIST (INSTANT UPDATE LAYAR)
         function toggleChecklistProtected(idx, stage) {
             const item = rtrData[idx];
             
@@ -289,31 +340,30 @@
             if (!verifyAndSavePIN(stageName, requiredPIN)) return;
 
             const today = getTodayStr();
-            let entryDone = item.entryDone, entry = item.entry;
-            let accDone = item.accDone, acc = item.acc;
-            let salesDone = item.salesDone, sales = item.sales;
-            let dbDone = item.dbDone, db = item.db;
-
+            
             if (stage === 'entry') {
-                entryDone = !entryDone; entry = entryDone ? today : "";
-                if (!entryDone) { accDone = false; acc = ""; salesDone = false; sales = ""; dbDone = false; db = ""; }
+                item.entryDone = !item.entryDone; item.entry = item.entryDone ? today : "";
+                if (!item.entryDone) { item.accDone = false; item.acc = ""; item.salesDone = false; item.sales = ""; item.dbDone = false; item.db = ""; }
             } else if (stage === 'acc') {
-                accDone = !accDone; acc = accDone ? today : "";
-                if (!accDone) { salesDone = false; sales = ""; dbDone = false; db = ""; }
+                item.accDone = !item.accDone; item.acc = item.accDone ? today : "";
+                if (!item.accDone) { item.salesDone = false; item.sales = ""; item.dbDone = false; item.db = ""; }
             } else if (stage === 'sales') {
-                salesDone = !salesDone; sales = salesDone ? today : "";
-                if (!salesDone) { dbDone = false; db = ""; }
+                item.salesDone = !item.salesDone; item.sales = item.salesDone ? today : "";
+                if (!item.salesDone) { item.dbDone = false; item.db = ""; }
             } else if (stage === 'db') {
-                dbDone = !dbDone; db = dbDone ? today : "";
+                item.dbDone = !item.dbDone; item.db = item.dbDone ? today : "";
             }
+
+            localStorage.setItem("cached_rtr_data", JSON.stringify(rtrData));
+            renderTable();
 
             postToSheet({
                 action: "UPDATE",
                 id: item.id,
-                entryDone, entry,
-                accDone, acc,
-                salesDone, sales,
-                dbDone, db
+                entryDone: item.entryDone, entry: item.entry,
+                accDone: item.accDone, acc: item.acc,
+                salesDone: item.salesDone, sales: item.sales,
+                dbDone: item.dbDone, db: item.db
             });
         }
 
@@ -406,25 +456,13 @@
             document.getElementById('modal-bg').classList.add('hidden');
         }
 
-        function saveNewRTR(e) {
-            e.preventDefault();
-            postToSheet({
-                action: "ADD",
-                noTtr: document.getElementById('input-no-ttr').value,
-                outlet: document.getElementById('input-outlet').value,
-                direktorat: document.getElementById('input-direktorat').value,
-                wh: document.getElementById('input-date').value
-            });
-            closeModal();
-            document.getElementById('input-no-ttr').value = '';
-            document.getElementById('input-outlet').value = '';
-            document.getElementById('input-direktorat').value = '';
-        }
-
         function resetDataWithAdminPIN() {
             const pin = prompt("PERINGATAN! Hanya Admin yang bisa mengosongkan database.\nMasukkan PIN Admin:");
             if (pin === PIN_CONFIG.ADMIN) {
                 if (confirm("Apakah Anda yakin ingin MENGHAPUS SELURUH DATA dari Google Sheets?")) {
+                    rtrData = [];
+                    localStorage.removeItem("cached_rtr_data");
+                    renderTable();
                     postToSheet({ action: "RESET" });
                 }
             } else if (pin !== null) {
