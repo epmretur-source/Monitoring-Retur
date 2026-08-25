@@ -9,6 +9,11 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .animate-pulse-slow { animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
@@ -26,13 +31,19 @@
                 </div>
             </div>
             <div class="flex items-center space-x-2">
+                <!-- Tombol Alert Harian PIC -->
+                <button onclick="openAlertModal()" class="relative bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 text-xs font-medium px-3 py-2 rounded-lg flex items-center space-x-1.5 transition border border-rose-500/30 shadow">
+                    <i class="fa-solid fa-bell animate-bounce"></i>
+                    <span>Alert Pending PIC</span>
+                    <span id="global-alert-badge" class="absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full hidden">0</span>
+                </button>
                 <button onclick="openSearchModal()" class="bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-medium px-3 py-2 rounded-lg flex items-center space-x-1.5 transition border border-slate-700 shadow">
                     <i class="fa-solid fa-magnifying-glass"></i>
-                    <span>Cari Arsip / Riwayat</span>
+                    <span>Cari Arsip</span>
                 </button>
                 <button onclick="clearSavedSession()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium px-3 py-2 rounded-lg flex items-center space-x-1.5 transition border border-slate-700">
                     <i class="fa-solid fa-key text-amber-400"></i>
-                    <span>Keluar / Reset PIN</span>
+                    <span>Reset PIN</span>
                 </button>
                 <button onclick="fetchDataFromSheet()" class="bg-slate-700 hover:bg-slate-800 text-white text-sm font-medium px-3 py-2 rounded-lg flex items-center space-x-2 transition shadow">
                     <i class="fa-solid fa-arrows-rotate"></i>
@@ -138,6 +149,32 @@
 
     </main>
 
+    <!-- POP-UP MODAL ALERT PENDING PER PIC -->
+    <div id="modal-alert-bg" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="bg-rose-900 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Pusat Alert & Daftar Pending Harian Masing-Masing PIC
+                </h3>
+                <button onclick="closeAlertModal()" class="text-rose-200 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="p-4 bg-rose-50 border-b border-rose-100 flex items-center justify-between text-xs text-rose-800">
+                <span><i class="fa-solid fa-circle-info mr-1"></i> Data di bawah dikelompokkan otomatis berdasarkan tugas yang <strong>belum diproses</strong> oleh masing-masing PIC.</span>
+                <span id="total-pending-alert-badge" class="font-bold bg-rose-200 px-2 py-0.5 rounded text-rose-900">0 Pending</span>
+            </div>
+
+            <div class="p-5 overflow-y-auto space-y-6 flex-1 bg-slate-50" id="alert-content-container">
+                <!-- Diisi via JavaScript -->
+            </div>
+
+            <div class="p-3 bg-slate-100 border-t border-slate-200 flex justify-between items-center text-xs">
+                <span class="text-slate-500">SLA Pengerjaan: Maksimal 1 hari per PIC. Silakan segera eksekusi item yang tertunda.</span>
+                <button type="button" onclick="closeAlertModal()" class="px-4 py-1.5 bg-slate-800 text-white rounded-lg font-medium hover:bg-slate-700">Tutup</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Input Retur Baru -->
     <div id="modal-bg" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
@@ -196,7 +233,7 @@
         </div>
     </div>
 
-    <!-- POP-UP MODAL PENCARIAN ARSIR / RIWAYAT -->
+    <!-- POP-UP MODAL PENCARIAN ARSIP -->
     <div id="modal-search-bg" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[85vh]">
             <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
@@ -286,6 +323,7 @@
                 try {
                     rtrData = JSON.parse(cachedData);
                     renderTable();
+                    updateGlobalAlertBadge();
                 } catch (e) {
                     console.error("Gagal membaca cache lokal", e);
                 }
@@ -299,6 +337,7 @@
                 rtrData = freshData;
                 localStorage.setItem("cached_rtr_data", JSON.stringify(freshData));
                 renderTable();
+                updateGlobalAlertBadge();
             } catch (err) {
                 console.error("Gagal sinkron data:", err);
             } finally {
@@ -348,6 +387,7 @@
             rtrData.unshift(newItem); 
             localStorage.setItem("cached_rtr_data", JSON.stringify(rtrData));
             renderTable();
+            updateGlobalAlertBadge();
             closeModal();
 
             document.getElementById('input-no-ttr').value = '';
@@ -412,6 +452,7 @@
             document.getElementById('modal-cn-bg').classList.add('hidden');
             activeTargetIndexForCN = null;
             renderTable();
+            updateGlobalAlertBadge();
         }
 
         function confirmSaveCN() {
@@ -435,6 +476,7 @@
         function saveAndUpdate(item) {
             localStorage.setItem("cached_rtr_data", JSON.stringify(rtrData));
             renderTable();
+            updateGlobalAlertBadge();
 
             postToSheet({
                 action: "UPDATE",
@@ -539,6 +581,146 @@
             document.getElementById('stat-process').innerText = onProcess;
             document.getElementById('stat-completed').innerText = completed;
             document.getElementById('stat-overdue').innerText = overdueCount;
+        }
+
+        // SISTEM ALERT PIC HARIAN
+        function updateGlobalAlertBadge() {
+            let totalPending = 0;
+            rtrData.forEach(item => {
+                if (shouldHideCompletedItem(item)) return;
+                if (!item.entryDone || (!item.accDone && item.entryDone) || (!item.salesDone && item.accDone) || (!item.dbDone && item.salesDone)) {
+                    totalPending++;
+                }
+            });
+
+            const badge = document.getElementById('global-alert-badge');
+            if (totalPending > 0) {
+                badge.innerText = totalPending;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function openAlertModal() {
+            document.getElementById('modal-alert-bg').classList.remove('hidden');
+            
+            let whPending = [];
+            let accPending = [];
+            let salesPending = [];
+            let dbPending = [];
+
+            rtrData.forEach(item => {
+                if (shouldHideCompletedItem(item)) return;
+
+                if (!item.entryDone) {
+                    whPending.push(item);
+                } else if (!item.accDone) {
+                    accPending.push(item);
+                } else if (!item.salesDone) {
+                    salesPending.push(item);
+                } else if (!item.dbDone) {
+                    dbPending.push(item);
+                }
+            });
+
+            const totalAll = whPending.length + accPending.length + salesPending.length + dbPending.length;
+            document.getElementById('total-pending-alert-badge').innerText = `${totalAll} Pending Total`;
+
+            const container = document.getElementById('alert-content-container');
+            container.innerHTML = `
+                <!-- 1. WH PENDING -->
+                <div class="bg-white rounded-xl border border-sky-200 shadow-sm overflow-hidden">
+                    <div class="bg-sky-50 px-4 py-3 border-b border-sky-200 flex justify-between items-center">
+                        <h4 class="font-bold text-sky-900 text-xs flex items-center gap-2">
+                            <i class="fa-solid fa-boxes-stacked text-sky-600"></i> 1. Warehouse (WH) Entry Pending
+                        </h4>
+                        <span class="bg-sky-200 text-sky-900 px-2 py-0.5 rounded text-[10px] font-bold">${whPending.length} Item</span>
+                    </div>
+                    <div class="p-3 space-y-2">
+                        ${whPending.length === 0 ? '<p class="text-xs text-slate-400 italic text-center py-2">Tidak ada pending untuk Warehouse.</p>' : 
+                            whPending.map(i => `
+                                <div class="flex justify-between items-center text-xs p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                                    <div>
+                                        <strong class="text-blue-600">${i.noTtr}</strong> - ${i.outlet} <span class="text-[10px] bg-slate-200 px-1.5 py-0.5 rounded">${i.direktorat}</span>
+                                        <span class="block text-[10px] text-slate-500 mt-0.5">Tgl Datang: ${i.wh}</span>
+                                    </div>
+                                    <span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-1 rounded">Butuh Entry WH</span>
+                                </div>
+                            `).join('')}
+                    </div>
+                </div>
+
+                <!-- 2. ACCOUNTING PENDING -->
+                <div class="bg-white rounded-xl border border-indigo-200 shadow-sm overflow-hidden">
+                    <div class="bg-indigo-50 px-4 py-3 border-b border-indigo-200 flex justify-between items-center">
+                        <h4 class="font-bold text-indigo-900 text-xs flex items-center gap-2">
+                            <i class="fa-solid fa-file-invoice-dollar text-indigo-600"></i> 2. Accounting (CN) Pending
+                        </h4>
+                        <span class="bg-indigo-200 text-indigo-900 px-2 py-0.5 rounded text-[10px] font-bold">${accPending.length} Item</span>
+                    </div>
+                    <div class="p-3 space-y-2">
+                        ${accPending.length === 0 ? '<p class="text-xs text-slate-400 italic text-center py-2">Tidak ada pending untuk Accounting.</p>' : 
+                            accPending.map(i => `
+                                <div class="flex justify-between items-center text-xs p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                                    <div>
+                                        <strong class="text-blue-600">${i.noTtr}</strong> - ${i.outlet} <span class="text-[10px] bg-slate-200 px-1.5 py-0.5 rounded">${i.direktorat}</span>
+                                        <span class="block text-[10px] text-slate-500 mt-0.5">WH Entry Tgl: ${i.entry}</span>
+                                    </div>
+                                    <span class="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-2 py-1 rounded">Butuh Proses Accounting</span>
+                                </div>
+                            `).join('')}
+                    </div>
+                </div>
+
+                <!-- 3. DIR SALES PENDING -->
+                <div class="bg-white rounded-xl border border-purple-200 shadow-sm overflow-hidden">
+                    <div class="bg-purple-50 px-4 py-3 border-b border-purple-200 flex justify-between items-center">
+                        <h4 class="font-bold text-purple-900 text-xs flex items-center gap-2">
+                            <i class="fa-solid fa-user-tie text-purple-600"></i> 3. Dir Sales Review Pending
+                        </h4>
+                        <span class="bg-purple-200 text-purple-900 px-2 py-0.5 rounded text-[10px] font-bold">${salesPending.length} Item</span>
+                    </div>
+                    <div class="p-3 space-y-2">
+                        ${salesPending.length === 0 ? '<p class="text-xs text-slate-400 italic text-center py-2">Tidak ada pending untuk Dir Sales.</p>' : 
+                            salesPending.map(i => `
+                                <div class="flex justify-between items-center text-xs p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                                    <div>
+                                        <strong class="text-blue-600">${i.noTtr}</strong> - ${i.outlet} <span class="text-[10px] bg-slate-200 px-1.5 py-0.5 rounded">${i.direktorat}</span>
+                                        <span class="block text-[10px] text-slate-500 mt-0.5">Accounting Tgl: ${i.acc}</span>
+                                    </div>
+                                    <span class="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-1 rounded">Butuh Review Sales</span>
+                                </div>
+                            `).join('')}
+                    </div>
+                </div>
+
+                <!-- 4. DATA PROSES PENDING -->
+                <div class="bg-white rounded-xl border border-emerald-200 shadow-sm overflow-hidden">
+                    <div class="bg-emerald-50 px-4 py-3 border-b border-emerald-200 flex justify-between items-center">
+                        <h4 class="font-bold text-emerald-900 text-xs flex items-center gap-2">
+                            <i class="fa-solid fa-database text-emerald-600"></i> 4. Data Proses & Input CN Pending
+                        </h4>
+                        <span class="bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded text-[10px] font-bold">${dbPending.length} Item</span>
+                    </div>
+                    <div class="p-3 space-y-2">
+                        ${dbPending.length === 0 ? '<p class="text-xs text-slate-400 italic text-center py-2">Tidak ada pending untuk Data Proses.</p>' : 
+                            dbPending.map(i => `
+                                <div class="flex justify-between items-center text-xs p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                                    <div>
+                                        <strong class="text-blue-600">${i.noTtr}</strong> - ${i.outlet} <span class="text-[10px] bg-slate-200 px-1.5 py-0.5 rounded">${i.direktorat}</span>
+                                        <span class="block text-[10px] text-slate-500 mt-0.5">Sales Review Tgl: ${i.sales}</span>
+                                    </div>
+                                    <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-1 rounded">Butuh Input Nomor CN</span>
+                                </div>
+                            `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function closeAlertModal() {
+            document.getElementById('modal-alert-bg').classList.add('hidden');
         }
 
         // FUNGSI POP-UP PENCARIAN ARSIP
@@ -653,6 +835,7 @@
                     rtrData = [];
                     localStorage.removeItem("cached_rtr_data");
                     renderTable();
+                    updateGlobalAlertBadge();
                     postToSheet({ action: "RESET" });
                 }
             } else if (pin !== null) {
