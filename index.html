@@ -28,7 +28,7 @@
             <div class="flex items-center space-x-2">
                 <button onclick="clearSavedSession()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium px-3 py-2 rounded-lg flex items-center space-x-1.5 transition border border-slate-700">
                     <i class="fa-solid fa-key text-amber-400"></i>
-                    <span>Reset PIN Tersimpan</span>
+                    <span>Keluar / Reset PIN</span>
                 </button>
                 <button onclick="fetchDataFromSheet()" class="bg-slate-700 hover:bg-slate-800 text-white text-sm font-medium px-3 py-2 rounded-lg flex items-center space-x-2 transition shadow">
                     <i class="fa-solid fa-arrows-rotate"></i>
@@ -192,7 +192,8 @@
         };
 
         let rtrData = [];
-        let activeUserPIN = sessionStorage.getItem("saved_rtr_pin") || null;
+        // Menggunakan localStorage agar PIN tersimpan walaupun tab tidak sengaja tertutup
+        let userPermissions = JSON.parse(localStorage.getItem("saved_rtr_permissions") || "[]");
 
         function showLoading(show) {
             document.getElementById('loading-indicator').classList.toggle('hidden', !show);
@@ -210,30 +211,31 @@
             return Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
         }
 
-        function getOrVerifyPIN(stageName, requiredPINs) {
-            // Jika sudah punya PIN tersimpan dan PIN tersebut valid untuk divisi ini
-            if (activeUserPIN && requiredPINs.includes(activeUserPIN)) {
-                return activeUserPIN;
-            }
+        function verifyAndSavePIN(stageName, requiredPINs) {
+            // Cek apakah ada di daftar akses tersimpan
+            const isAuthorized = requiredPINs.some(pin => userPermissions.includes(pin));
+            if (isAuthorized) return true;
 
-            // Jika belum ada PIN atau PIN tersimpan tidak punya akses ke divisi ini
+            // Jika belum ada akses, minta PIN
             const inputPIN = prompt(`Masukkan PIN ${stageName}:`);
-            if (!inputPIN) return null;
+            if (!inputPIN) return false;
 
-            if (requiredPINs.includes(inputPIN)) {
-                activeUserPIN = inputPIN;
-                sessionStorage.setItem("saved_rtr_pin", inputPIN); // Simpan sementara di memori browser
-                return inputPIN;
+            if (requiredPINs.includes(inputPIN) || inputPIN === PIN_CONFIG.ADMIN) {
+                if (!userPermissions.includes(inputPIN)) {
+                    userPermissions.push(inputPIN);
+                    localStorage.setItem("saved_rtr_permissions", JSON.stringify(userPermissions));
+                }
+                return true;
             } else {
-                alert("PIN Salah! Anda tidak memiliki hak akses untuk tindakan ini.");
-                return null;
+                alert("PIN Salah! Akses ditolak.");
+                return false;
             }
         }
 
         function clearSavedSession() {
-            sessionStorage.removeItem("saved_rtr_pin");
-            activeUserPIN = null;
-            alert("Sesi PIN tersimpan telah di-reset. Anda perlu memasukkan PIN lagi nanti.");
+            localStorage.removeItem("saved_rtr_permissions");
+            userPermissions = [];
+            alert("Sesi login telah di-reset/keluar.");
         }
 
         async function fetchDataFromSheet() {
@@ -244,7 +246,7 @@
                 renderTable();
             } catch (err) {
                 alert("Gagal mengambil data dari Google Sheets.");
-            } font-medium {
+            } finally {
                 showLoading(false);
             }
         }
@@ -266,8 +268,7 @@
         }
 
         function checkAccessAndOpenModal() {
-            const pin = getOrVerifyPIN("Warehouse (WH)", [PIN_CONFIG.WH, PIN_CONFIG.ADMIN]);
-            if (pin) {
+            if (verifyAndSavePIN("Warehouse (WH)", [PIN_CONFIG.WH, PIN_CONFIG.ADMIN])) {
                 openModal();
             }
         }
@@ -287,8 +288,7 @@
             else if (stage === 'sales') { requiredPIN = [PIN_CONFIG.SALES, PIN_CONFIG.ADMIN]; stageName = "Dir Sales"; }
             else if (stage === 'db') { requiredPIN = [PIN_CONFIG.DB, PIN_CONFIG.ADMIN]; stageName = "Data Proses"; }
 
-            const validPIN = getOrVerifyPIN(stageName, requiredPIN);
-            if (!validPIN) return;
+            if (!verifyAndSavePIN(stageName, requiredPIN)) return;
 
             const today = getTodayStr();
             let entryDone = item.entryDone, entry = item.entry;
