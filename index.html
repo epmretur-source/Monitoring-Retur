@@ -26,6 +26,10 @@
                 </div>
             </div>
             <div class="flex items-center space-x-2">
+                <button onclick="openSearchModal()" class="bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-medium px-3 py-2 rounded-lg flex items-center space-x-1.5 transition border border-slate-700 shadow">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <span>Cari Arsip / Riwayat</span>
+                </button>
                 <button onclick="clearSavedSession()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium px-3 py-2 rounded-lg flex items-center space-x-1.5 transition border border-slate-700">
                     <i class="fa-solid fa-key text-amber-400"></i>
                     <span>Keluar / Reset PIN</span>
@@ -132,42 +136,6 @@
             </div>
         </div>
 
-        <!-- NEW SECTION: Search Archive / Riwayat Retur -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mt-8">
-            <div class="p-5 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
-                        <i class="fa-solid fa-magnifying-glass-chart text-blue-600"></i> Pencarian Arsip & Riwayat Retur (Semua Data)
-                    </h3>
-                    <p class="text-xs text-slate-500 mt-0.5">Cari nomor TTR, Outlet, atau Nomor CN untuk melihat detail tanggal proses, status terkini, dan nomor CN walaupun data sudah tersembunyi dari layar utama.</p>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <input type="text" id="archive-search-input" onkeyup="renderArchiveTable()" placeholder="Ketik No TTR / Outlet / No CN..." class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-80 bg-white">
-                </div>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200 uppercase tracking-wider text-center">
-                            <th class="p-3 text-left">No TTR</th>
-                            <th class="p-3 text-left">Outlet & Direktorat</th>
-                            <th class="p-3 text-center">Tgl Terima WH</th>
-                            <th class="p-3 text-center bg-sky-50">1. Tgl WH Entry</th>
-                            <th class="p-3 text-center bg-indigo-50">2. Tgl Acc (CN)</th>
-                            <th class="p-3 text-center bg-purple-50">3. Tgl Sales Review</th>
-                            <th class="p-3 text-center bg-emerald-50">4. Tgl Data Proses</th>
-                            <th class="p-3 bg-amber-50 text-amber-900">Nomor CN</th>
-                            <th class="p-3 text-center">Status / Posisi Saat Ini</th>
-                        </tr>
-                    </thead>
-                    <tbody id="archive-table-body" class="divide-y divide-slate-200">
-                        <tr><td colspan="9" class="p-6 text-center text-slate-400 font-medium">Ketik nomor TTR, Nama Outlet, atau Nomor CN pada kolom pencarian di atas untuk melihat riwayat.</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
     </main>
 
     <!-- Modal Input Retur Baru -->
@@ -224,6 +192,32 @@
                     <button type="button" onclick="closeCNModal()" class="px-4 py-2 border border-slate-300 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50">Batal</button>
                     <button type="button" onclick="confirmSaveCN()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 shadow">Simpan & Complete</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- POP-UP MODAL PENCARIAN ARSIR / RIWAYAT -->
+    <div id="modal-search-bg" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-magnifying-glass text-cyan-400"></i> Pencarian Arsip & Riwayat Retur (Semua Data)
+                </h3>
+                <button onclick="closeSearchModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-5 border-b border-slate-200 bg-slate-50">
+                <label class="block text-xs font-medium text-slate-600 mb-1">Ketik Nomor TTR, Nama Outlet, atau Nomor CN:</label>
+                <div class="flex space-x-2">
+                    <input type="text" id="popup-search-box" onkeyup="executePopupSearch()" placeholder="Contoh: TTRS/2026/... atau Nama Outlet..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                </div>
+            </div>
+            <div class="p-5 overflow-y-auto space-y-4 flex-1 bg-slate-50/50" id="popup-search-results">
+                <div class="text-center text-slate-400 py-8 text-xs font-medium">
+                    Silakan ketik kata kunci pada kolom di atas untuk menampilkan riwayat lengkap.
+                </div>
+            </div>
+            <div class="p-3 bg-slate-100 border-t border-slate-200 text-right">
+                <button type="button" onclick="closeSearchModal()" class="px-4 py-1.5 bg-slate-800 text-white rounded-lg text-xs font-medium hover:bg-slate-700">Tutup</button>
             </div>
         </div>
     </div>
@@ -292,7 +286,6 @@
                 try {
                     rtrData = JSON.parse(cachedData);
                     renderTable();
-                    renderArchiveTable();
                 } catch (e) {
                     console.error("Gagal membaca cache lokal", e);
                 }
@@ -306,7 +299,6 @@
                 rtrData = freshData;
                 localStorage.setItem("cached_rtr_data", JSON.stringify(freshData));
                 renderTable();
-                renderArchiveTable();
             } catch (err) {
                 console.error("Gagal sinkron data:", err);
             } finally {
@@ -356,7 +348,6 @@
             rtrData.unshift(newItem); 
             localStorage.setItem("cached_rtr_data", JSON.stringify(rtrData));
             renderTable();
-            renderArchiveTable();
             closeModal();
 
             document.getElementById('input-no-ttr').value = '';
@@ -421,7 +412,6 @@
             document.getElementById('modal-cn-bg').classList.add('hidden');
             activeTargetIndexForCN = null;
             renderTable();
-            renderArchiveTable();
         }
 
         function confirmSaveCN() {
@@ -445,7 +435,6 @@
         function saveAndUpdate(item) {
             localStorage.setItem("cached_rtr_data", JSON.stringify(rtrData));
             renderTable();
-            renderArchiveTable();
 
             postToSheet({
                 action: "UPDATE",
@@ -552,18 +541,36 @@
             document.getElementById('stat-overdue').innerText = overdueCount;
         }
 
-        // FUNGSI RENDER TABEL PENCARIAN ARSIP (MENCARI DI SELURUH DATA TANPA TERBATAS 2 HARI)
-        function renderArchiveTable() {
-            const tbody = document.getElementById('archive-table-body');
-            const search = document.getElementById('archive-search-input').value.toLowerCase().trim();
-            tbody.innerHTML = '';
+        // FUNGSI POP-UP PENCARIAN ARSIP
+        function openSearchModal() {
+            document.getElementById('modal-search-bg').classList.remove('hidden');
+            document.getElementById('popup-search-box').value = '';
+            document.getElementById('popup-search-results').innerHTML = `
+                <div class="text-center text-slate-400 py-8 text-xs font-medium">
+                    Silakan ketik nomor TTR, nama Outlet, atau nomor CN untuk melihat riwayat lengkap.
+                </div>`;
+            setTimeout(() => document.getElementById('popup-search-box').focus(), 100);
+        }
+
+        function closeSearchModal() {
+            document.getElementById('modal-search-bg').classList.add('hidden');
+        }
+
+        function executePopupSearch() {
+            const search = document.getElementById('popup-search-box').value.toLowerCase().trim();
+            const container = document.getElementById('popup-search-results');
+            container.innerHTML = '';
 
             if (!search) {
-                tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-slate-400 font-medium">Ketik nomor TTR, Nama Outlet, atau Nomor CN pada kolom pencarian di atas untuk melihat riwayat.</td></tr>`;
+                container.innerHTML = `
+                    <div class="text-center text-slate-400 py-8 text-xs font-medium">
+                        Silakan ketik nomor TTR, nama Outlet, atau nomor CN untuk melihat riwayat lengkap.
+                    </div>`;
                 return;
             }
 
             let foundCount = 0;
+            let htmlContent = '';
 
             rtrData.forEach((item) => {
                 const matchTtr = item.noTtr.toLowerCase().includes(search);
@@ -576,30 +583,52 @@
                 foundCount++;
                 let status = getItemStatus(item);
 
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+                htmlContent += `
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-2 gap-2">
+                            <div>
+                                <span class="text-xs font-bold text-blue-600 block">${item.noTtr}</span>
+                                <h4 class="font-bold text-slate-800 text-sm">${item.outlet} <span class="ml-2 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border">${item.direktorat}</span></h4>
+                            </div>
+                            <div>
+                                <span class="${getStatusBadgeClass(status)}">${status}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-1">
+                            <div class="bg-sky-50/50 p-2 rounded border border-sky-100">
+                                <span class="text-[10px] font-bold text-sky-800 block">1. WH Entry</span>
+                                <span class="text-slate-700 font-semibold">${item.entry || '<span class="text-slate-400 font-normal italic">Belum</span>'}</span>
+                            </div>
+                            <div class="bg-indigo-50/50 p-2 rounded border border-indigo-100">
+                                <span class="text-[10px] font-bold text-indigo-800 block">2. Accounting</span>
+                                <span class="text-slate-700 font-semibold">${item.acc || '<span class="text-slate-400 font-normal italic">Belum</span>'}</span>
+                            </div>
+                            <div class="bg-purple-50/50 p-2 rounded border border-purple-100">
+                                <span class="text-[10px] font-bold text-purple-800 block">3. Dir Sales</span>
+                                <span class="text-slate-700 font-semibold">${item.sales || '<span class="text-slate-400 font-normal italic">Belum</span>'}</span>
+                            </div>
+                            <div class="bg-emerald-50/50 p-2 rounded border border-emerald-100">
+                                <span class="text-[10px] font-bold text-emerald-800 block">4. Data Proses</span>
+                                <span class="text-slate-700 font-semibold">${item.db || '<span class="text-slate-400 font-normal italic">Belum</span>'}</span>
+                            </div>
+                        </div>
 
-                tr.innerHTML = `
-                    <td class="p-3 font-bold text-blue-600">${item.noTtr}</td>
-                    <td class="p-3">
-                        <span class="font-bold text-slate-800 block">${item.outlet}</span>
-                        <span class="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 mt-0.5 inline-block">${item.direktorat}</span>
-                    </td>
-                    <td class="p-3 text-center text-slate-600">${item.wh || '-'}</td>
-                    <td class="p-3 text-center bg-sky-50/20 text-slate-700 font-medium">${item.entry || '<span class="text-slate-400 italic">Belum</span>'}</td>
-                    <td class="p-3 text-center bg-indigo-50/20 text-slate-700 font-medium">${item.acc || '<span class="text-slate-400 italic">Belum</span>'}</td>
-                    <td class="p-3 text-center bg-purple-50/20 text-slate-700 font-medium">${item.sales || '<span class="text-slate-400 italic">Belum</span>'}</td>
-                    <td class="p-3 text-center bg-emerald-50/20 text-slate-700 font-medium">${item.db || '<span class="text-slate-400 italic">Belum</span>'}</td>
-                    <td class="p-3 text-center bg-amber-50/50 font-bold text-slate-800">${item.noCn ? '<span class="px-2 py-1 bg-amber-100 text-amber-900 rounded border border-amber-200">' + item.noCn + '</span>' : '<span class="text-slate-400 font-normal">-</span>'}</td>
-                    <td class="p-3 text-center">
-                        <span class="${getStatusBadgeClass(status)}">${status}</span>
-                    </td>
+                        <div class="flex items-center justify-between text-xs pt-1 text-slate-500 bg-slate-50 px-3 py-2 rounded-lg">
+                            <span>Tgl Terima Barang (WH): <strong class="text-slate-700">${item.wh || '-'}</strong></span>
+                            <span>Nomor CN: <strong class="text-amber-700">${item.noCn ? item.noCn : 'Belum diterbitkan'}</strong></span>
+                        </div>
+                    </div>
                 `;
-                tbody.appendChild(tr);
             });
 
             if (foundCount === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-rose-500 font-medium">Tidak ditemukan data arsip retur dengan kata kunci "${search}".</td></tr>`;
+                container.innerHTML = `
+                    <div class="text-center text-rose-500 py-8 text-xs font-semibold bg-white rounded-xl border border-rose-100">
+                        Tidak ditemukan data arsip retur dengan kata kunci "${search}".
+                    </div>`;
+            } else {
+                container.innerHTML = htmlContent;
             }
         }
 
@@ -624,7 +653,6 @@
                     rtrData = [];
                     localStorage.removeItem("cached_rtr_data");
                     renderTable();
-                    renderArchiveTable();
                     postToSheet({ action: "RESET" });
                 }
             } else if (pin !== null) {
