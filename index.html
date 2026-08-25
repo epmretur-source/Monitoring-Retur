@@ -192,11 +192,11 @@
         };
 
         let rtrData = [];
-        // Menggunakan localStorage agar PIN tersimpan walaupun tab tidak sengaja tertutup
         let userPermissions = JSON.parse(localStorage.getItem("saved_rtr_permissions") || "[]");
 
         function showLoading(show) {
-            document.getElementById('loading-indicator').classList.toggle('hidden', !show);
+            const el = document.getElementById('loading-indicator');
+            if(el) el.classList.toggle('hidden', !show);
         }
 
         function getTodayStr() {
@@ -212,11 +212,9 @@
         }
 
         function verifyAndSavePIN(stageName, requiredPINs) {
-            // Cek apakah ada di daftar akses tersimpan
             const isAuthorized = requiredPINs.some(pin => userPermissions.includes(pin));
             if (isAuthorized) return true;
 
-            // Jika belum ada akses, minta PIN
             const inputPIN = prompt(`Masukkan PIN ${stageName}:`);
             if (!inputPIN) return false;
 
@@ -235,7 +233,7 @@
         function clearSavedSession() {
             localStorage.removeItem("saved_rtr_permissions");
             userPermissions = [];
-            alert("Sesi login telah di-reset/keluar.");
+            alert("Sesi login telah di-reset. Anda perlu memasukkan PIN lagi.");
         }
 
         async function fetchDataFromSheet() {
