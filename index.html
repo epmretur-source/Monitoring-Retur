@@ -26,6 +26,10 @@
                 </div>
             </div>
             <div class="flex items-center space-x-2">
+                <button onclick="clearSavedSession()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium px-3 py-2 rounded-lg flex items-center space-x-1.5 transition border border-slate-700">
+                    <i class="fa-solid fa-key text-amber-400"></i>
+                    <span>Reset PIN Tersimpan</span>
+                </button>
                 <button onclick="fetchDataFromSheet()" class="bg-slate-700 hover:bg-slate-800 text-white text-sm font-medium px-3 py-2 rounded-lg flex items-center space-x-2 transition shadow">
                     <i class="fa-solid fa-arrows-rotate"></i>
                     <span>Refresh</span>
@@ -188,6 +192,7 @@
         };
 
         let rtrData = [];
+        let activeUserPIN = sessionStorage.getItem("saved_rtr_pin") || null;
 
         function showLoading(show) {
             document.getElementById('loading-indicator').classList.toggle('hidden', !show);
@@ -205,6 +210,32 @@
             return Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
         }
 
+        function getOrVerifyPIN(stageName, requiredPINs) {
+            // Jika sudah punya PIN tersimpan dan PIN tersebut valid untuk divisi ini
+            if (activeUserPIN && requiredPINs.includes(activeUserPIN)) {
+                return activeUserPIN;
+            }
+
+            // Jika belum ada PIN atau PIN tersimpan tidak punya akses ke divisi ini
+            const inputPIN = prompt(`Masukkan PIN ${stageName}:`);
+            if (!inputPIN) return null;
+
+            if (requiredPINs.includes(inputPIN)) {
+                activeUserPIN = inputPIN;
+                sessionStorage.setItem("saved_rtr_pin", inputPIN); // Simpan sementara di memori browser
+                return inputPIN;
+            } else {
+                alert("PIN Salah! Anda tidak memiliki hak akses untuk tindakan ini.");
+                return null;
+            }
+        }
+
+        function clearSavedSession() {
+            sessionStorage.removeItem("saved_rtr_pin");
+            activeUserPIN = null;
+            alert("Sesi PIN tersimpan telah di-reset. Anda perlu memasukkan PIN lagi nanti.");
+        }
+
         async function fetchDataFromSheet() {
             showLoading(true);
             try {
@@ -213,7 +244,7 @@
                 renderTable();
             } catch (err) {
                 alert("Gagal mengambil data dari Google Sheets.");
-            } finally {
+            } font-medium {
                 showLoading(false);
             }
         }
@@ -235,11 +266,9 @@
         }
 
         function checkAccessAndOpenModal() {
-            const inputPIN = prompt("Masukkan PIN Warehouse (WH):");
-            if (inputPIN === PIN_CONFIG.WH || inputPIN === PIN_CONFIG.ADMIN) {
+            const pin = getOrVerifyPIN("Warehouse (WH)", [PIN_CONFIG.WH, PIN_CONFIG.ADMIN]);
+            if (pin) {
                 openModal();
-            } else if (inputPIN !== null) {
-                alert("PIN Salah! Akses ditolak.");
             }
         }
 
@@ -258,13 +287,8 @@
             else if (stage === 'sales') { requiredPIN = [PIN_CONFIG.SALES, PIN_CONFIG.ADMIN]; stageName = "Dir Sales"; }
             else if (stage === 'db') { requiredPIN = [PIN_CONFIG.DB, PIN_CONFIG.ADMIN]; stageName = "Data Proses"; }
 
-            const inputPIN = prompt(`Masukkan PIN ${stageName}:`);
-            if (!inputPIN) return;
-
-            if (!requiredPIN.includes(inputPIN)) {
-                alert("PIN Salah! Anda tidak memiliki hak akses untuk mengubah bagian ini.");
-                return;
-            }
+            const validPIN = getOrVerifyPIN(stageName, requiredPIN);
+            if (!validPIN) return;
 
             const today = getTodayStr();
             let entryDone = item.entryDone, entry = item.entry;
