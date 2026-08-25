@@ -181,6 +181,26 @@
         </div>
     </div>
 
+    <!-- Modal Input Nomor CN (Khusus Data Proses) -->
+    <div id="modal-cn-bg" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full overflow-hidden">
+            <div class="bg-emerald-700 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold text-sm flex items-center gap-2"><i class="fa-solid fa-file-invoice"></i> Input Nomor CN</h3>
+                <button onclick="closeCNModal()" class="text-emerald-200 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Masukkan Nomor CN (Credit Note):</label>
+                    <input type="text" id="input-no-cn-val" placeholder="Contoh: CN-2026-9901" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none font-semibold text-slate-800">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeCNModal()" class="px-4 py-2 border border-slate-300 text-slate-600 rounded-lg text-xs font-medium hover:bg-slate-50">Batal</button>
+                    <button type="button" onclick="confirmSaveCN()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 shadow">Simpan & Complete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Script Logic -->
     <script>
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxHxZ2wjMODco9nx5lVDWc6ke6-vT24d1zGmdmXMgvvii6FtyGyiyiDA1DM5FCxiTg_/exec";
@@ -195,6 +215,7 @@
 
         let rtrData = [];
         let userPermissions = JSON.parse(localStorage.getItem("saved_rtr_permissions") || "[]");
+        let activeTargetIndexForCN = null;
 
         function showLoading(show) {
             const el = document.getElementById('loading-indicator');
@@ -343,28 +364,56 @@
             if (stage === 'entry') {
                 item.entryDone = !item.entryDone; item.entry = item.entryDone ? today : "";
                 if (!item.entryDone) { item.accDone = false; item.acc = ""; item.salesDone = false; item.sales = ""; item.dbDone = false; item.db = ""; item.noCn = ""; }
+                saveAndUpdate(item);
             } else if (stage === 'acc') {
                 item.accDone = !item.accDone; item.acc = item.accDone ? today : "";
                 if (!item.accDone) { item.salesDone = false; item.sales = ""; item.dbDone = false; item.db = ""; item.noCn = ""; }
+                saveAndUpdate(item);
             } else if (stage === 'sales') {
                 item.salesDone = !item.salesDone; item.sales = item.salesDone ? today : "";
                 if (!item.salesDone) { item.dbDone = false; item.db = ""; item.noCn = ""; }
+                saveAndUpdate(item);
             } else if (stage === 'db') {
                 if (!item.dbDone) {
-                    // Saat mau dicentang, minta input Nomor CN
-                    const inputCN = prompt("Masukkan Nomor CN (Credit Note):", item.noCn || "");
-                    if (inputCN === null) return; // Batal jika klik cancel
-                    item.noCn = inputCN.trim();
-                    item.dbDone = true;
-                    item.db = today;
+                    // Buka Modal Pop-up Input CN
+                    activeTargetIndexForCN = idx;
+                    document.getElementById('input-no-cn-val').value = item.noCn || "";
+                    document.getElementById('modal-cn-bg').classList.remove('hidden');
                 } else {
-                    // Jika uncheck
+                    // Uncheck Data Proses
                     item.dbDone = false;
                     item.db = "";
                     item.noCn = "";
+                    saveAndUpdate(item);
                 }
             }
+        }
 
+        function closeCNModal() {
+            document.getElementById('modal-cn-bg').classList.add('hidden');
+            activeTargetIndexForCN = null;
+            renderTable(); // Refresh tampilan checkbox ke keadaan awal
+        }
+
+        function confirmSaveCN() {
+            if (activeTargetIndexForCN === null) return;
+            const item = rtrData[activeTargetIndexForCN];
+            const cnValue = document.getElementById('input-no-cn-val').value.trim();
+
+            if (!cnValue) {
+                alert("Harap isi Nomor CN terlebih dahulu!");
+                return;
+            }
+
+            item.noCn = cnValue;
+            item.dbDone = true;
+            item.db = getTodayStr();
+
+            closeCNModal();
+            saveAndUpdate(item);
+        }
+
+        function saveAndUpdate(item) {
             localStorage.setItem("cached_rtr_data", JSON.stringify(rtrData));
             renderTable();
 
