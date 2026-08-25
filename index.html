@@ -83,15 +83,15 @@
             </div>
         </div>
 
-        <!-- Table Data Section -->
+        <!-- Table Data Section (Active) -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h3 class="font-bold text-slate-800 text-base">Monitoring Checklist RTR</h3>
-                    <p class="text-xs text-slate-500 mt-0.5">SLA per PIC = 1 Hari | Data yang selesai > 2 hari disembunyikan dari layar (tetap tersimpan di Sheets)</p>
+                    <h3 class="font-bold text-slate-800 text-base">Monitoring Checklist RTR (Aktif)</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">SLA per PIC = 1 Hari | Data yang selesai > 2 hari otomatis tersembunyi dari tabel ini</p>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <input type="text" id="search-input" onkeyup="renderTable()" placeholder="Cari No TTR / Outlet / No CN..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64">
+                    <input type="text" id="search-input" onkeyup="renderTable()" placeholder="Cari di tabel aktif..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64">
                     <button onclick="resetDataWithAdminPIN()" class="text-rose-600 hover:bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition shadow-sm">
                         <i class="fa-solid fa-trash-can"></i>
                         <span>Kosongkan Database</span>
@@ -117,22 +117,12 @@
                             <th class="p-3">Workflow Status</th>
                         </tr>
                         <tr class="bg-slate-50 text-slate-500 border-b border-slate-200 text-center">
-                            <th class="p-2"></th>
-                            <th class="p-2"></th>
-                            <th class="p-2"></th>
-                            <th class="p-2"></th>
-                            <th class="p-2"></th>
-                            <th class="p-2 bg-sky-50/30">Done?</th>
-                            <th class="p-2 bg-sky-50/30">Tgl Entry</th>
-                            <th class="p-2 bg-indigo-50/30">Done?</th>
-                            <th class="p-2 bg-indigo-50/30">Tgl Acc</th>
-                            <th class="p-2 bg-purple-50/30">Done?</th>
-                            <th class="p-2 bg-purple-50/30">Tgl Sales</th>
-                            <th class="p-2 bg-emerald-50/30">Done?</th>
-                            <th class="p-2 bg-emerald-50/30">Tgl Proses</th>
-                            <th class="p-2 bg-amber-50/50"></th>
-                            <th class="p-2"></th>
-                            <th class="p-2"></th>
+                            <th class="p-2"></th><th class="p-2"></th><th class="p-2"></th><th class="p-2"></th><th class="p-2"></th>
+                            <th class="p-2 bg-sky-50/30">Done?</th><th class="p-2 bg-sky-50/30">Tgl Entry</th>
+                            <th class="p-2 bg-indigo-50/30">Done?</th><th class="p-2 bg-indigo-50/30">Tgl Acc</th>
+                            <th class="p-2 bg-purple-50/30">Done?</th><th class="p-2 bg-purple-50/30">Tgl Sales</th>
+                            <th class="p-2 bg-emerald-50/30">Done?</th><th class="p-2 bg-emerald-50/30">Tgl Proses</th>
+                            <th class="p-2 bg-amber-50/50"></th><th class="p-2"></th><th class="p-2"></th>
                         </tr>
                     </thead>
                     <tbody id="table-body" class="divide-y divide-slate-200">
@@ -141,6 +131,43 @@
                 </table>
             </div>
         </div>
+
+        <!-- NEW SECTION: Search Archive / Riwayat Retur -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mt-8">
+            <div class="p-5 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                        <i class="fa-solid fa-magnifying-glass-chart text-blue-600"></i> Pencarian Arsip & Riwayat Retur (Semua Data)
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Cari nomor TTR, Outlet, atau Nomor CN untuk melihat detail tanggal proses, status terkini, dan nomor CN walaupun data sudah tersembunyi dari layar utama.</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <input type="text" id="archive-search-input" onkeyup="renderArchiveTable()" placeholder="Ketik No TTR / Outlet / No CN..." class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-80 bg-white">
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200 uppercase tracking-wider text-center">
+                            <th class="p-3 text-left">No TTR</th>
+                            <th class="p-3 text-left">Outlet & Direktorat</th>
+                            <th class="p-3 text-center">Tgl Terima WH</th>
+                            <th class="p-3 text-center bg-sky-50">1. Tgl WH Entry</th>
+                            <th class="p-3 text-center bg-indigo-50">2. Tgl Acc (CN)</th>
+                            <th class="p-3 text-center bg-purple-50">3. Tgl Sales Review</th>
+                            <th class="p-3 text-center bg-emerald-50">4. Tgl Data Proses</th>
+                            <th class="p-3 bg-amber-50 text-amber-900">Nomor CN</th>
+                            <th class="p-3 text-center">Status / Posisi Saat Ini</th>
+                        </tr>
+                    </thead>
+                    <tbody id="archive-table-body" class="divide-y divide-slate-200">
+                        <tr><td colspan="9" class="p-6 text-center text-slate-400 font-medium">Ketik nomor TTR, Nama Outlet, atau Nomor CN pada kolom pencarian di atas untuk melihat riwayat.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </main>
 
     <!-- Modal Input Retur Baru -->
@@ -265,6 +292,7 @@
                 try {
                     rtrData = JSON.parse(cachedData);
                     renderTable();
+                    renderArchiveTable();
                 } catch (e) {
                     console.error("Gagal membaca cache lokal", e);
                 }
@@ -278,6 +306,7 @@
                 rtrData = freshData;
                 localStorage.setItem("cached_rtr_data", JSON.stringify(freshData));
                 renderTable();
+                renderArchiveTable();
             } catch (err) {
                 console.error("Gagal sinkron data:", err);
             } finally {
@@ -327,6 +356,7 @@
             rtrData.unshift(newItem); 
             localStorage.setItem("cached_rtr_data", JSON.stringify(rtrData));
             renderTable();
+            renderArchiveTable();
             closeModal();
 
             document.getElementById('input-no-ttr').value = '';
@@ -375,12 +405,10 @@
                 saveAndUpdate(item);
             } else if (stage === 'db') {
                 if (!item.dbDone) {
-                    // Buka Modal Pop-up Input CN
                     activeTargetIndexForCN = idx;
                     document.getElementById('input-no-cn-val').value = item.noCn || "";
                     document.getElementById('modal-cn-bg').classList.remove('hidden');
                 } else {
-                    // Uncheck Data Proses
                     item.dbDone = false;
                     item.db = "";
                     item.noCn = "";
@@ -392,7 +420,8 @@
         function closeCNModal() {
             document.getElementById('modal-cn-bg').classList.add('hidden');
             activeTargetIndexForCN = null;
-            renderTable(); // Refresh tampilan checkbox ke keadaan awal
+            renderTable();
+            renderArchiveTable();
         }
 
         function confirmSaveCN() {
@@ -416,6 +445,7 @@
         function saveAndUpdate(item) {
             localStorage.setItem("cached_rtr_data", JSON.stringify(rtrData));
             renderTable();
+            renderArchiveTable();
 
             postToSheet({
                 action: "UPDATE",
@@ -522,6 +552,57 @@
             document.getElementById('stat-overdue').innerText = overdueCount;
         }
 
+        // FUNGSI RENDER TABEL PENCARIAN ARSIP (MENCARI DI SELURUH DATA TANPA TERBATAS 2 HARI)
+        function renderArchiveTable() {
+            const tbody = document.getElementById('archive-table-body');
+            const search = document.getElementById('archive-search-input').value.toLowerCase().trim();
+            tbody.innerHTML = '';
+
+            if (!search) {
+                tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-slate-400 font-medium">Ketik nomor TTR, Nama Outlet, atau Nomor CN pada kolom pencarian di atas untuk melihat riwayat.</td></tr>`;
+                return;
+            }
+
+            let foundCount = 0;
+
+            rtrData.forEach((item) => {
+                const matchTtr = item.noTtr.toLowerCase().includes(search);
+                const matchOutlet = item.outlet.toLowerCase().includes(search);
+                const matchCn = (item.noCn || "").toLowerCase().includes(search);
+                const matchDir = item.direktorat.toLowerCase().includes(search);
+
+                if (!matchTtr && !matchOutlet && !matchCn && !matchDir) return;
+
+                foundCount++;
+                let status = getItemStatus(item);
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-blue-600">${item.noTtr}</td>
+                    <td class="p-3">
+                        <span class="font-bold text-slate-800 block">${item.outlet}</span>
+                        <span class="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 mt-0.5 inline-block">${item.direktorat}</span>
+                    </td>
+                    <td class="p-3 text-center text-slate-600">${item.wh || '-'}</td>
+                    <td class="p-3 text-center bg-sky-50/20 text-slate-700 font-medium">${item.entry || '<span class="text-slate-400 italic">Belum</span>'}</td>
+                    <td class="p-3 text-center bg-indigo-50/20 text-slate-700 font-medium">${item.acc || '<span class="text-slate-400 italic">Belum</span>'}</td>
+                    <td class="p-3 text-center bg-purple-50/20 text-slate-700 font-medium">${item.sales || '<span class="text-slate-400 italic">Belum</span>'}</td>
+                    <td class="p-3 text-center bg-emerald-50/20 text-slate-700 font-medium">${item.db || '<span class="text-slate-400 italic">Belum</span>'}</td>
+                    <td class="p-3 text-center bg-amber-50/50 font-bold text-slate-800">${item.noCn ? '<span class="px-2 py-1 bg-amber-100 text-amber-900 rounded border border-amber-200">' + item.noCn + '</span>' : '<span class="text-slate-400 font-normal">-</span>'}</td>
+                    <td class="p-3 text-center">
+                        <span class="${getStatusBadgeClass(status)}">${status}</span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            if (foundCount === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-rose-500 font-medium">Tidak ditemukan data arsip retur dengan kata kunci "${search}".</td></tr>`;
+            }
+        }
+
         function getStatusBadgeClass(status) {
             if (status === 'COMPLETED') return 'px-2 py-1 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800';
             return 'px-2 py-1 rounded text-[10px] font-bold bg-amber-100 text-amber-800';
@@ -543,6 +624,7 @@
                     rtrData = [];
                     localStorage.removeItem("cached_rtr_data");
                     renderTable();
+                    renderArchiveTable();
                     postToSheet({ action: "RESET" });
                 }
             } else if (pin !== null) {
