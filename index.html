@@ -320,7 +320,7 @@
 
     <!-- Script Logic -->
     <script>
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxHxZ2wjMODco9nx5lVDWc6ke6-vT24d1zGmdmXMgvvii6FtyGyiyiDA1DM5FCxiTg_/exec";
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx8M-bu2Gr9TwT2yZ0d6lGCxUz73jrIC_B2Bv-OgpXq-fLExDNt-XO7046uILY2WKMc/exec";
 
         const PIN_CONFIG = {
             ADMIN: "9999",     
@@ -406,16 +406,26 @@
 
         async function postToSheet(payload) {
             showLoading(true);
+
             try {
-                await fetch(GOOGLE_SCRIPT_URL, {
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8'
+                    },
                     body: JSON.stringify(payload)
                 });
+
+                // no-cors tidak mengizinkan browser membaca response.
+                // Setelah POST, data akan disinkronkan ulang dari Google Sheets.
+                return true;
+
             } catch (err) {
                 console.error("Gagal kirim data ke Sheet:", err);
                 alert("Peringatan: Gagal menyinkronkan data ke Google Sheets online.");
+                return false;
+
             } finally {
                 showLoading(false);
             }
